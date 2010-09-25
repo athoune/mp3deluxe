@@ -30,14 +30,21 @@ class MultiProcess(object):
 
 class Tracks(object):
 	def __init__(self, cdda, wav):
+		self.wav = wav
 		self.path = os.path.join(cdda.path, wav)
 		self.cdda = cdda
 		root, ext = os.path.splitext(wav)
 		s = root.split(' ')
+		self.root = root
 		self.number = int(s[0])
 		self.title = ' '.join(s[1:])
 	def __repr__(self):
 		return '<Track #%i "%s">' % (self.number, self.title)
+	def to_mp3(self, folder='.'):
+		mp3 = os.path.join(folder, '%s.mp3' % self.root)
+		print "Converting %s to mp3" % self.title
+		c = subprocess.Popen(['lame', '-b320', '-q0', '-m', 's', '--nohist', '--disptime', '2', self.path, mp3])
+		c.wait()
 
 class CDDA(object):
 	def __init__(self, path):
@@ -60,10 +67,8 @@ def cddas():
 		if m != None:
 			yield CDDA(m.group(2))
 
-
 def to_mp3(cd):
 	"convert an audio cd to mp3"
-	m = MultiProcess()
 	for wav in os.listdir(cd):
 		if wav[0] != '.':
 			p = os.path.join(cd, wav)
@@ -71,10 +76,9 @@ def to_mp3(cd):
 			c = subprocess.Popen(['lame', '-b320', '-q0', '-m', 's', '--nohist', '--disptime', '2', p, '%s.mp3' % root])
 			print wav
 			c.wait()
-	m.wait()
 
 if __name__ == '__main__':
 	for cd in cddas():
 		print cd
 		for track in cd:
-			print '\t', track
+			track.to_mp3()
