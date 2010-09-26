@@ -7,8 +7,9 @@ import subprocess
 import re
 import os
 import os.path
-import shutil
 import time
+
+from mutagen.mp3 import EasyMP3 as MP3
 
 class MultiProcess(object):
 	def __init__(self, processors = 2):
@@ -43,13 +44,24 @@ class Tracks(object):
 	def to_mp3(self, folder='.'):
 		mp3 = os.path.join(folder, '%s.mp3' % self.root)
 		print "Converting %s to mp3" % self.title
-		c = subprocess.Popen(['lame', '-b320', '-q0', '-m', 's', '--nohist', '--disptime', '2', self.path, mp3])
+		c = subprocess.Popen(['lame', '-b320', '-q0', '-m', 's', '--nohist', '--disptime', '2', self.path, mp3 + ".tmp"])
 		c.wait()
+		os.rename(mp3 + ".tmp", mp3)
+		audio = MP3(mp3)
+		audio['title'] = self.title
+		audio['tracknumber'] = str(self.number)
+		audio['album'] = self.cdda.title
+		audio.save()
+
+class FlacFolder(object):
+	"A folder full of flac files"
 
 class CDDA(object):
 	def __init__(self, path):
 		self.path = path
 		self.title = path.split('/')[-1]
+	def __len__(self):
+		return len([p for p in os.listdir(self.path) if p[0] != '.'])
 	def __iter__(self):
 		for wav in os.listdir(self.path):
 			if wav[0] != '.':
@@ -67,18 +79,9 @@ def cddas():
 		if m != None:
 			yield CDDA(m.group(2))
 
-def to_mp3(cd):
-	"convert an audio cd to mp3"
-	for wav in os.listdir(cd):
-		if wav[0] != '.':
-			p = os.path.join(cd, wav)
-			root, ext = os.path.splitext(wav)
-			c = subprocess.Popen(['lame', '-b320', '-q0', '-m', 's', '--nohist', '--disptime', '2', p, '%s.mp3' % root])
-			print wav
-			c.wait()
-
 if __name__ == '__main__':
 	for cd in cddas():
-		print cd
+		print cd, len(cd)
 		for track in cd:
+			print track
 			track.to_mp3()
