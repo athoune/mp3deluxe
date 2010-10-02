@@ -8,6 +8,10 @@ setup(name="MP3 de luxe",
       license="GPL-3",
       author="Mathieu Lecarme",
       url="http://github.com/athoune/mp3deluxe",
+      classifiers=[
+        'Environment :: Console',
+        'Operating System :: MacOS :: MacOS X'
+      ],
       #packages=['mp3deluxe'],
       package_dir={'': 'src/'},
       keywords= "mp3, osx",
